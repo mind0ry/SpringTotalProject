@@ -6,6 +6,7 @@ pipeline {
 		DOCKER_TAG = "latest"
 		EC2_HOST = "3.39.232.170"
 		EC2_USER = "ubuntu"
+		COMPOSE_FILE = "docker-compose.yml"
 	}
 	
 	stages {
@@ -83,8 +84,8 @@ pipeline {
 			steps {
 				echo 'docker stop rm'
 				sh '''
-					docker stop ${CONTAINER_NAME} || true
-					docker rm ${CONTAINER_NAME} || true
+					docker stop total-app || true
+					docker rm total-app || true
 					docker pull ${IMAGE_NAME}
 				   '''
 			}
