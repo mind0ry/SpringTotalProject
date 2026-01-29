@@ -24,7 +24,7 @@ p {
 </head>
 <body>
 	<div class="container">
-	<h3 class="text-center" style="color:red">데이트 코스♥</h3>
+	<h3 class="text-center" style="color:red">식당 목록</h3>
 	  <div class="row">
 	    <c:forEach var="vo" items="${list }">
 	    	<div class="col-md-3">
