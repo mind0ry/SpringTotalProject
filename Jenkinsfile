@@ -3,8 +3,7 @@ pipeline {
 	stages {
 		stage('Git Check Test') {
 			steps {
-				git branch: 'main',
-				url: https://github.com/mind0ry/SpringTotalProject.git
+				git branch: 'main'
 			}
 		}
 		
