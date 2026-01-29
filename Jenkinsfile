@@ -58,12 +58,12 @@ pipeline {
 			steps {
 				sshagent(credentials:['SERVER_SSH_KEY']) {
 					sh """
-					ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} << EOF
+					ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} '
 					cd /home/ubuntu/app
 					docker-compose down
 					docker-compose pull
 					docker-compose up -d
-EOF
+					'
 					"""
 				}
 			}
