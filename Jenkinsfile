@@ -53,7 +53,7 @@ pipeline {
 			}
 		}
 		
-		stage('Deploy to EC2') {
+		/*stage('Deploy to EC2') {
 			steps {
 			  sshagent(credentials:['SERVER_SSH_KEY']) {
 
@@ -66,9 +66,9 @@ pipeline {
 				   """
 				}
 			}
-		}
+		}*/
 		
-		/*
+		
 		stage('Docker Compose Down') {
 			steps {
 				echo 'docker-compose down'
@@ -99,7 +99,7 @@ pipeline {
 			}
 		}
 		
-		stage('Docker Run') {
+		/*stage('Docker Run') {
 			steps {
 				echo 'Docker Run'
 				sh '''
