@@ -8,13 +8,6 @@ pipeline {
 			APP_DIR = "~/app"
 			JAR_NAME = "SpringTotalProject-0.0.1-SNAPSHOT.war"
 		}
-	
-	stages {
-		stage('Git Check Test') {
-			steps {
-				git branch: 'main'
-			}
-		}
 		
 		/*stage('Check Git Info') {
 			steps {
@@ -29,8 +22,8 @@ pipeline {
 		// 감지 = main : push (commit)
 		stage('Check Out') {
 			steps {
-				git branch: 'main',
-					url: 'https://github.com/mind0ry/SpringTotalProject.git'
+				echo 'Git Checkout'
+				checkout scm
 			}
 		}
 		
