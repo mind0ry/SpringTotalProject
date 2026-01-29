@@ -9,6 +9,7 @@ pipeline {
 			JAR_NAME = "SpringTotalProject-0.0.1-SNAPSHOT.war"
 		}
 		
+		stages {
 		/*stage('Check Git Info') {
 			steps {
 				sh '''
@@ -19,51 +20,52 @@ pipeline {
 			}
 		}*/
 		
-		// 감지 = main : push (commit)
-		stage('Check Out') {
-			steps {
-				echo 'Git Checkout'
-				checkout scm
-			}
-		}
-		
-		stage('Gradle Permission') {
-			steps {
-				sh '''
-					chmod +x gradlew
-				   '''
-			}
-		}
-		
-		// build 시작
-		stage('Gradle Build') {
-			steps {
-				sh '''
-					./gradlew clean build
-				   '''
-			}
-		}
-		
-		// war파일 전송 = rsync / scp
-		stage('Deploy = rsync') {
-			steps {
-				sshagent(credentials:['SERVER_SSH_KEY']) {
-					sh """
-						rsync -avz -e "ssh -o StrictHostKeyChecking=no build/libs/*.war ${SERVER_USER}@${SERVER_IP}:${APP_DIR}
-					   """
+			// 감지 = main : push (commit)
+			stage('Check Out') {
+				steps {
+					echo 'Git Checkout'
+					checkout scm
 				}
 			}
-		}
-		
-		stage('Run Application') {
-			steps {
-				sshagent(credentials:['SERVER_SSH_KEY']) {
-					sh """
-						ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} << 'EOF'
-							pkill -f 'java -jar'
-							nohup java -jar ${APP_DIR}/${JAR_NAME} > log.txt 2>&1 &
+			
+			stage('Gradle Permission') {
+				steps {
+					sh '''
+						chmod +x gradlew
+					   '''
+				}
+			}
+			
+			// build 시작
+			stage('Gradle Build') {
+				steps {
+					sh '''
+						./gradlew clean build
+					   '''
+				}
+			}
+			
+			// war파일 전송 = rsync / scp
+			stage('Deploy = rsync') {
+				steps {
+					sshagent(credentials:['SERVER_SSH_KEY']) {
+						sh """
+							rsync -avz -e "ssh -o StrictHostKeyChecking=no build/libs/*.war ${SERVER_USER}@${SERVER_IP}:${APP_DIR}
+						   """
+					}
+				}
+			}
+			
+			stage('Run Application') {
+				steps {
+					sshagent(credentials:['SERVER_SSH_KEY']) {
+						sh """
+							ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} << 'EOF'
+								pkill -f 'java -jar'
+								nohup java -jar ${APP_DIR}/${JAR_NAME} > log.txt 2>&1 &
 EOF
-					   """
+						   """
+					}
 				}
 			}
 		}
