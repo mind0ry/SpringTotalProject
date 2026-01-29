@@ -86,7 +86,7 @@ pipeline {
 				sh '''
 					docker stop total-app || true
 					docker rm total-app || true
-					docker pull ${IMAGE_NAME}
+					docker pull total-app
 				   '''
 			}
 		}
