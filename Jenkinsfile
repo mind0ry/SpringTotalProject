@@ -1,79 +1,127 @@
 pipeline {
-    agent any
-
-    environment {
-        DOCKERHUB_USER = credentials('DOCKERHUB_USERNAME')
-        DOCKERHUB_PASS = credentials('DOCKERHUB_PASSWORD')
-
-        SERVER_IP   = '3.39.232.170'
-        SERVER_USER = 'ubuntu'
-
-        IMAGE_NAME  = 'mindory0144/total-app'
-        CONTAINER   = 'total-app'
-        PORT        = '9090'
-    }
-
-    stages {
-
-        stage('Checkout') {
-            steps {
+	agent any 
+	
+	environment {
+		DOCKER_IMAGE = "mindory0144/total-app"
+		DOCKER_TAG = "latest"
+		EC2_HOST = "3.39.232.170"
+		EC2_USER = "ubuntu"
+	}
+	
+	stages {
+		// GIT 연결 => 주소
+		stage('Checkout') {
+			steps{
 				echo 'Git Checkout'
-                checkout scm
-            }
-        }
-		// 권한 부여
-        stage('Grant Gradle Permission') {
-            steps {
-                sh 'chmod +x gradlew'
-            }
-        }
-		// gradlew build
-        stage('Build War') {
-            steps {
-                sh './gradlew clean build'
-            }
-        }
+				checkout scm
+			}
+		}
+		
+		stage('Gradlew Build') {
+			steps {
+				echo 'Gradlew Build'
+				sh '''
+					chmod +x gradlew
+					./gradlew clean build -x test
+				   '''
+			}
+		}
+		
+		stage('Docker Build') {
+			steps {
+				echo 'Docker Image Build'
+				sh '''
+					docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
+				   '''
+			}
+		}
+		
+		stage('Docker Hub Login') {
+			steps {
+				echo 'DockerHub Login'
+				withCredentials([usernamePassword(
+					credentialsId: 'dockerhub_config',
+					usernameVariable: 'DOCKER_ID',
+					passwordVariable: 'DOCKER_PW'
+				)]){
+					sh '''
+					    echo "DOCKER_ID=$DOCKER_ID,DOCKER_PW=$DOCKER_PW"
+					    echo "$DOCKER_PW" | docker login -u "$DOCKER_ID" --password-stdin
+					    docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
+					   '''
+				}
+			}
+		}
+		
+		stage('Deploy to EC2') {
+			steps {
+			  sshagent(credentials:['SERVER_SSH_KEY']) {
 
-        stage('Docker Login') {
-            steps {
-                sh '''
-                echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin
-                '''
-            }
-        }
-
-        stage('Build & Push Docker Image') {
-            steps {
-                sh '''
-                docker build -t $DOCKERHUB_USER/${IMAGE_NAME}:latest .
-                docker push $DOCKERHUB_USER/${IMAGE_NAME}:latest
-                '''
-            }
-        }
-
-        stage('Deploy to Ubuntu Server') {
-            steps {
-                sshagent(credentials: ['SERVER_SSH_KEY']) {
-                    sh """
-                    ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} << EOF
-                        docker stop ${CONTAINER} || true
-                        docker rm ${CONTAINER} || true
-                        docker pull $DOCKERHUB_USER/${IMAGE_NAME}:latest
-                        docker run -d --name ${CONTAINER} -p ${PORT}:${PORT} \
-                          $DOCKERHUB_USER/${IMAGE_NAME}:latest
-EOF
-                    """
-                }
-            }
-        }
-    }
-
-    post {
-        success {
-            echo 'Docker Deploy Success'
-        }
-        failure {
-            echo 'Docker Deploy Failed'
-        }
-    }
+				sh """
+					  ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} \
+					  "sudo docker stop total-app || true && \
+					   sudo docker rm total-app || true && \
+					   sudo docker pull ${DOCKER_IMAGE}:${DOCKER_TAG} && \
+					   sudo docker run --name total-app -d -p 9090:9090 ${DOCKER_IMAGE}:${DOCKER_TAG}"
+				   """
+				}
+			}
+		}
+		
+		/*
+		stage('Docker Compose Down') {
+			steps {
+				echo 'docker-compose down'
+				sh '''
+					docker-compose -f ${COMPOSE_FILE} down || true
+			       '''
+			}
+		}
+		
+		
+		stage('Docker Stop And rm') {
+			steps {
+				echo 'docker stop rm'
+				sh '''
+					docker stop ${CONTAINER_NAME} || true
+					docker rm ${CONTAINER_NAME} || true
+					docker pull ${IMAGE_NAME}
+				   '''
+			}
+		}
+		
+		stage('Docker Compose UP') {
+			steps {
+				echo 'docker-compose up'
+				sh '''
+					docker-compose -f ${COMPOSE_FILE} up -d
+				   '''
+			}
+		}
+		
+		stage('Docker Run') {
+			steps {
+				echo 'Docker Run'
+				sh '''
+					docker stop ${CONTAINER_NAME} || true
+					docker rm ${CONTAINER_NAME} || true
+					
+					docker pull ${IMAGE_NAME}
+					 
+					docker run --name ${CONTAINER_NAME} \
+					-it -d -p 9090:9090 \
+					${IMAGE_NAME}
+				   '''
+			}
+		}*/
+	}
+	
+	post {
+		success {
+			echo 'CI/CD 실행 성공'
+		}
+		failure {
+			echo 'CI/CD 실행 실패'
+		}
+	}
 }
