@@ -84,9 +84,9 @@ pipeline {
 			steps {
 				echo 'docker stop rm'
 				sh '''
-					docker stop total-app || true
-					docker rm total-app || true
-					docker pull total-app
+					docker stop ${DOCKER_IMAGE} || true
+					docker rm ${DOCKER_IMAGE} || true
+					docker pull ${DOCKER_IMAGE}
 				   '''
 			}
 		}
