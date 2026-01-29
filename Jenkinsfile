@@ -54,6 +54,20 @@ pipeline {
 			}
 		}
 		
+		stage('Deploy docker-compose') {
+			steps {
+				sshagent(credentials:['SERVER_SSH_KEY']) {
+					sh """
+					ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} << EOF
+					cd /home/ubuntu/app
+					docker-compose down
+					docker-compose pull
+					docker-compose up -d
+					EOF
+					"""
+				}
+			}
+		}
 		/*stage('Deploy to EC2') {
 			steps {
 			  sshagent(credentials:['SERVER_SSH_KEY']) {
@@ -70,7 +84,7 @@ pipeline {
 		}*/
 		
 		
-		stage('Docker Compose Down') {
+		/*stage('Docker Compose Down') {
 			steps {
 				echo 'docker-compose down'
 				sh '''
@@ -98,7 +112,7 @@ pipeline {
 					docker-compose -f ${COMPOSE_FILE} up -d
 				   '''
 			}
-		}
+		}*/
 		
 		/*stage('Docker Run') {
 			steps {
