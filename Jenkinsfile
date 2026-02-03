@@ -70,6 +70,21 @@ pipeline {
 				   '''
 			}
 		}
+		
+		stage('Docker Login') {
+		  	steps {
+		   		 withCredentials([usernamePassword(
+		        	credentialsId: 'dockerhub-creds',
+		       		usernameVariable: 'DH_USER',
+		        	passwordVariable: 'DH_PASS'
+		    )]) {
+		     	 sh '''
+		       		 echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin
+		      		'''
+		    	}
+		  	}
+		}
+		
 		// Docker Push
 		stage('Docker Push') {
 		  	steps {
