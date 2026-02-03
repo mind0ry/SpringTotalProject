@@ -8,7 +8,22 @@ pipeline {
 	}
 		
 	stages {
-		
+		/*
+			git push = commit
+			    |
+			web hooks / poll
+			    |
+			 jenkins (local)
+			    |
+			  build
+			    |
+			  docker build
+			  docker push
+			    |
+			  minikube
+			    | deployment.yaml update
+			  브라우저 실행
+		*/
 		/*
 		 연결 확인 = ngrok
 		 stage('Check Git Info') {
@@ -19,8 +34,8 @@ pipeline {
 				    git log -1
 				   '''
 			}
-		}
-		*/
+		}*/
+		
 		// 감지 = main : push (commit)
 		stage('Check Out') {
 			steps {
@@ -30,7 +45,7 @@ pipeline {
 		}
 		
 		// gradle build => war파일을 다시 생성 
-		/*stage('Gradle Permission') {
+		stage('Gradle Permission') {
 			steps {
 				sh '''
 				    chmod +x gradlew
@@ -47,30 +62,26 @@ pipeline {
 			}
 		}
 		
-		// war파일 전송 = rsync / scp 
-		stage('Deploy = rsync') {
+		// Docker Build 
+		stage('Docker Build') {
 			steps {
-				sshagent(credentials:['SERVER_SSH_KEY']){
-					sh """
-					    rsync -avz -e 'ssh -o StrictHostKeyChecking=no' build/libs.war ${SERVER_USER}@${SERVER_IP}:${APP_DIR}
-					   """
+				sh '''
+					docker build -t mindory0144/total-app:latest .
+				   '''
 				}
 			}
 		}
 		// 실행 명령 
 		
-		stage('Run Application') {
+		stage('Deploy to MiniKube') {
 			steps {
-				sshagent(credentials:['SERVER_SSH_KEY']){
-					sh """
-					    ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} << EOF
-					       pkill -f 'java -jar' || true
-					       nohup java -jar ${APP_DIR}/${JAR_NAME} > log.txt 2>&1 &
-EOF
-					   """ 
+				sh '''
+					kubectl delete deployment total-app || true
+					kubectl apply -f ~/k8s/deployment.yaml
+				   '''
 				}
 			}
-		}*/
+		}
 		
 	}
 }
