@@ -70,6 +70,15 @@ pipeline {
 				   '''
 			}
 		}
+		// Docker Push
+		stage('Docker Push') {
+		  	steps {
+		    	sh '''
+		      		docker push mindory0144/total-app:latest
+		    	'''
+		  	}
+		}
+		
 		// 실행 명령 
 		
 		stage('Deploy to MiniKube') {
