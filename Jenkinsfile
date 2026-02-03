@@ -76,7 +76,7 @@ pipeline {
 			steps {
 				sh '''
 					kubectl delete deployment total-app || true
-					kubectl apply -f /home/sist/k8s/deployment.yaml
+					kubectl apply -f /var/lib/jenkins/k8s/deployment.yaml
 				   '''
 			}
 		}
