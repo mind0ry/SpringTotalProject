@@ -68,7 +68,6 @@ pipeline {
 				sh '''
 					docker build -t mindory0144/total-app:latest .
 				   '''
-				}
 			}
 		}
 		// 실행 명령 
@@ -79,7 +78,6 @@ pipeline {
 					kubectl delete deployment total-app || true
 					kubectl apply -f ~/k8s/deployment.yaml
 				   '''
-				}
 			}
 		}
 		
