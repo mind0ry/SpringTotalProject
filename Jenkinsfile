@@ -109,3 +109,11 @@ pipeline {
 		
 	}
 }
+
+/*
+	sudo visudo
+	
+	(맨 밑 @includedir 바로 윗 줄에 추가)
+	jenkins ALL=(sist) NOPASSWD: /usr/local/bin/kubectl
+
+*/
