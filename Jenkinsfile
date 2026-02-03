@@ -1,142 +1,76 @@
 pipeline {
-	agent any 
+	agent any
 	
+	// 전역변수 => ${SERVER_IP}
 	environment {
-		DOCKER_IMAGE = "mindory0144/total-app"
-		DOCKER_TAG = "latest"
-		EC2_HOST = "3.39.232.170"
-		EC2_USER = "ubuntu"
-		COMPOSE_FILE = "~/app/docker-compose.yml"
+			APP_DIR = "~/app"
+			JAR_NAME = "SpringTotalProject-0.0.1-SNAPSHOT.war"
 	}
-	
+		
 	stages {
-		// GIT 연결 => 주소
-		stage('Checkout') {
-			steps{
-				echo 'Git Checkout'
-				checkout scm
+		
+		/*
+		 연결 확인 = ngrok
+		 stage('Check Git Info') {
+			steps {
+				sh '''
+				    echo "===Git Info==="
+				    git branch
+				    git log -1
+				   '''
+			}
+		}
+		*/
+		// 감지 = main : push (commit)
+		stage('Check Out') {
+			steps {
+				 echo 'Git Checkout'
+                 checkout scm
 			}
 		}
 		
-		stage('Gradlew Build') {
+		// gradle build => war파일을 다시 생성 
+		/*stage('Gradle Permission') {
 			steps {
-				echo 'Gradlew Build'
 				sh '''
-					chmod +x gradlew
-					./gradlew clean build -x test
+				    chmod +x gradlew
 				   '''
 			}
 		}
 		
-		stage('Docker Build') {
+		// build 시작 
+		stage('Gradle Build') {
 			steps {
-				echo 'Docker Image Build'
 				sh '''
-					docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
+				    ./gradlew clean build
 				   '''
 			}
 		}
 		
-		stage('Docker Hub Login') {
+		// war파일 전송 = rsync / scp 
+		stage('Deploy = rsync') {
 			steps {
-				echo 'DockerHub Login'
-				withCredentials([usernamePassword(
-					credentialsId: 'dockerhub_config',
-					usernameVariable: 'DOCKER_ID',
-					passwordVariable: 'DOCKER_PW'
-				)]){
-					sh '''
-					    echo "DOCKER_ID=$DOCKER_ID,DOCKER_PW=$DOCKER_PW"
-					    echo "$DOCKER_PW" | docker login -u "$DOCKER_ID" --password-stdin
-					    docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
-					   '''
-				}
-			}
-		}
-		
-		stage('Deploy docker-compose') {
-			steps {
-				sshagent(credentials:['SERVER_SSH_KEY']) {
+				sshagent(credentials:['SERVER_SSH_KEY']){
 					sh """
-					ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} '
-					cd /home/ubuntu/app
-					docker-compose down
-					docker-compose pull
-					docker-compose up -d
-					'
-					"""
+					    rsync -avz -e 'ssh -o StrictHostKeyChecking=no' build/libs.war ${SERVER_USER}@${SERVER_IP}:${APP_DIR}
+					   """
 				}
 			}
 		}
-		/*stage('Deploy to EC2') {
+		// 실행 명령 
+		
+		stage('Run Application') {
 			steps {
-			  sshagent(credentials:['SERVER_SSH_KEY']) {
-
-				sh """
-					  ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} \
-					  "sudo docker stop total-app || true && \
-					   sudo docker rm total-app || true && \
-					   sudo docker pull ${DOCKER_IMAGE}:${DOCKER_TAG} && \
-					   sudo docker run --name total-app -d -p 9090:9090 ${DOCKER_IMAGE}:${DOCKER_TAG}"
-				   """
+				sshagent(credentials:['SERVER_SSH_KEY']){
+					sh """
+					    ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_IP} << EOF
+					       pkill -f 'java -jar' || true
+					       nohup java -jar ${APP_DIR}/${JAR_NAME} > log.txt 2>&1 &
+EOF
+					   """ 
 				}
 			}
 		}*/
 		
-		
-		/*stage('Docker Compose Down') {
-			steps {
-				echo 'docker-compose down'
-				sh '''
-					docker-compose -f ${COMPOSE_FILE} down || true
-			       '''
-			}
-		}
-		
-		
-		stage('Docker Stop And rm') {
-			steps {
-				echo 'docker stop rm'
-				sh '''
-					docker stop ${DOCKER_IMAGE} || true
-					docker rm ${DOCKER_IMAGE} || true
-					docker pull ${DOCKER_IMAGE}
-				   '''
-			}
-		}
-		
-		stage('Docker Compose UP') {
-			steps {
-				echo 'docker-compose up'
-				sh '''
-					docker-compose -f ${COMPOSE_FILE} up -d
-				   '''
-			}
-		}*/
-		
-		/*stage('Docker Run') {
-			steps {
-				echo 'Docker Run'
-				sh '''
-					docker stop ${CONTAINER_NAME} || true
-					docker rm ${CONTAINER_NAME} || true
-					
-					docker pull ${IMAGE_NAME}
-					 
-					docker run --name ${CONTAINER_NAME} \
-					-it -d -p 9090:9090 \
-					${IMAGE_NAME}
-				   '''
-			}
-		}*/
-	}
-	
-	post {
-		success {
-			echo 'CI/CD 실행 성공'
-		}
-		failure {
-			echo 'CI/CD 실행 실패'
-		}
 	}
 }
