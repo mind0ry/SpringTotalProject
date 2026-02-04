@@ -21,10 +21,10 @@ p {
 	text-overflow: ellipsis;
 }
 </style>
-</head>
+</head> 
 <body>
 	<div class="container">
-	<h3 class="text-center" style="color: red">맛집 목록 (도커)</h3>
+	<h3 class="text-center" style="color: red">맛집 목록 (도커) </h3>
 	  <div class="row">
 	    <c:forEach var="vo" items="${list }">
 	    	<div class="col-md-3">
