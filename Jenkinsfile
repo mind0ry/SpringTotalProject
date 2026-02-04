@@ -84,9 +84,15 @@ pipeline {
 					done
 					
 					# 5) nginx가 없다면 무중단 불가 → 여기서 nginx upstream을 바꾸고 reload 해야 함
+					# 5) nginx 없으면 자동으로 띄우기
 					if ! docker ps --format '{{.Names}}' | grep -q "^${NGINX_NAME}$"; then
-						echo "ERROR: nginx container (${NGINX_NAME}) is not running. Zero-downtime requires nginx."
-						exit 1
+						echo "nginx container not found. Starting ${NGINX_NAME}..."
+						docker rm -f ${NGINX_NAME} || true
+						docker run -d \
+							--name ${NGINX_NAME} \
+							-p 9090:80 \
+							-v $HOME/nginx/upstream.conf:/etc/nginx/conf.d/upstream.conf:ro \
+							nginx:alpine
 					fi
 					
 					# 6) nginx upstream 스위치 (아래 스크립트는 nginx.conf 구조에 따라 달라짐)
