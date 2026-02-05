@@ -1,6 +1,7 @@
 #port
 server:
   port: 9090
+  shutdown: graceful
 #MVC
 spring:
   mvc:
@@ -16,3 +17,12 @@ spring:
 mybatis:
   type-aliases-package: com.sist.web.vo
   mapper-locations: mybatis/mapper/*.xml
+
+menagement:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoins:
+    health:
+      show-details: always 
